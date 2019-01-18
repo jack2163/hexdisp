@@ -28,16 +28,24 @@ int main(int argc, char** argv) {
 	////对文件进行16进制浏览, 可以进行上下翻页, 一次浏览ROW_SIZE*COL_SIZE个字节
 	
 	//检查文件名是否正确 
-	ifstream if_hex(option1, ios_base::binary);
+//	ifstream if_hex(option1, ios_base::binary);
+	fstream if_hex(option1);
 	if (not if_hex.is_open()){
 		cout << "\nThe file can't be opened!!!";
 		cout << "\nPls check the path and filename.";
 		return 0;
 	}
 	
-	//开始进行浏览
+	//开始进行浏览, 修改内容 
 	unsigned char data[ROW_SIZE*COL_SIZE];
 	long pos = 0;
+	
+	//修改内容时, 需要输入的内容 
+	long length = 0;
+	int  index = 0;
+	short buf[COL_SIZE];
+	char  confirm_modify;
+					
 	while(true){
 		if_hex.seekg(pos);
 		if (if_hex.tellg() != -1){
@@ -45,7 +53,7 @@ int main(int argc, char** argv) {
 			if_hex.read((char *)data, sizeof(data));
 			disp_proc(pos, data);					
 		}
-		cout << "\nPress the key 'j' 'k' 'g' 'x' to continue ..." << endl;	
+		cout << "\nPress the key 'j' 'k' 'g'  to browse; 'm' to modify; 'x' to exit ..." << endl;	
 			
 		switch (getch()) {
 			case 'j':
@@ -61,11 +69,41 @@ int main(int argc, char** argv) {
 					cout << "\n           ************ END OF FILE !!! ************" << endl;
 				}
 				break;
+				
 			case 'g':
 				cout << "\nInput the addr(hex) : ";
 				cin >> hex >> pos;
 				if_hex.clear();
 				break;
+				
+			case 'm':			
+				cout << "\nInput the addr(hex) : ";
+				cin >> hex >> pos;
+				cout << "\nInput the length(hex) : ";
+				cin >> dec >> length;
+				if (length > COL_SIZE) length = COL_SIZE;
+				cout << "\nInput the content : ";
+				for (index = 0; index < length; index++){
+					cin >> hex >> buf[index];
+					if (buf[index] > 0xFF) cout << "\nERROR : " <<  index+1 << " byte value > 0xFF";
+					break;
+				}
+				cout << "\nPls confirm the content : \n    ";
+				for (index = 0; index < length; index++) cout << " " << hex << buf[index];
+				cout << "\nDo you confirm to modify ? [Y/N] : ";
+				cin >> confirm_modify;
+				if (confirm_modify == 'Y' || confirm_modify == 'y'){
+					//修改指定位置的内容
+					if_hex.seekg(pos);
+					if_hex.write((char *)buf, length);
+					cout << "OK : have modified the content\n";
+				}
+				else{
+					//放弃修改内容
+					cout << "NOTE : canceled the modify content!\n";
+				} 
+				break;
+				
 			case 'x':
 			case 0x1b: // ESC
 				return 0;
