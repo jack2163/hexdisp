@@ -29,22 +29,23 @@ int main(int argc, char** argv) {
 	
 	//检查文件名是否正确 
 //	ifstream if_hex(option1, ios_base::binary);
-	fstream if_hex(option1);
+	fstream if_hex(option1, ios_base::binary | ios_base::in | ios_base::out);
 	if (not if_hex.is_open()){
 		cout << "\nThe file can't be opened!!!";
 		cout << "\nPls check the path and filename.";
 		return 0;
 	}
-	
+//	if_hex.exceptions(std::ifstream::failbit);
+		
 	//开始进行浏览, 修改内容 
 	unsigned char data[ROW_SIZE*COL_SIZE];
 	long pos = 0;
 	
 	//修改内容时, 需要输入的内容 
-	long length = 0;
-	int  index = 0;
-	short buf[COL_SIZE];
-	char  confirm_modify;
+//	long length = 0;
+//	int  index = 0;
+//	short buf[COL_SIZE];
+//	char  confirm_modify;
 					
 	while(true){
 		if_hex.seekg(pos);
@@ -52,9 +53,9 @@ int main(int argc, char** argv) {
 			memset(data, 0x0, sizeof(data));
 			if_hex.read((char *)data, sizeof(data));
 			disp_proc(pos, data);					
-		}
-		cout << "\nPress the key 'j' 'k' 'g'  to browse; 'm' to modify; 'x' to exit ..." << endl;	
-			
+		}			
+	    cout << "\nPress the key 'j' 'k' 'g'  to browse; 'm' to modify; 'x' to exit ..." << endl;	
+					
 		switch (getch()) {
 			case 'j':
 				(pos > ROW_SIZE*COL_SIZE) ? pos -= ROW_SIZE*COL_SIZE : pos = 0;
@@ -77,31 +78,43 @@ int main(int argc, char** argv) {
 				break;
 				
 			case 'm':			
+//				cout << "\nInput the addr(hex) : ";
+//				cin >> hex >> pos;
+//				cout << "\nInput the length(hex) : ";
+//				cin >> dec >> length;
+//				if (length > COL_SIZE) length = COL_SIZE;
+//				cout << "\nInput the content : ";
+//				for (index = 0; index < length; index++){
+//					cin >> hex >> buf[index];
+//					if (buf[index] > 0xFF) cout << "\nERROR : " <<  index+1 << " byte value > 0xFF";
+//					break;
+//				}
+//				cout << "\nPls confirm the content : \n    ";
+//				for (index = 0; index < length; index++) cout << " " << hex << buf[index];
+//				cout << "\nDo you confirm to modify ? [Y/N] : ";
+//				cin >> confirm_modify;
+//				if (confirm_modify == 'Y' || confirm_modify == 'y'){
+//					//修改指定位置的内容
+//					if_hex.seekg(pos);
+//					if_hex.write((char *)buf, length);
+//					cout << "OK : have modified the content\n";
+//				}
+//				else{
+//					//放弃修改内容
+//					cout << "NOTE : canceled the modify content!\n";
+//				} 
+				unsigned long ul_content;
 				cout << "\nInput the addr(hex) : ";
 				cin >> hex >> pos;
-				cout << "\nInput the length(hex) : ";
-				cin >> dec >> length;
-				if (length > COL_SIZE) length = COL_SIZE;
-				cout << "\nInput the content : ";
-				for (index = 0; index < length; index++){
-					cin >> hex >> buf[index];
-					if (buf[index] > 0xFF) cout << "\nERROR : " <<  index+1 << " byte value > 0xFF";
-					break;
-				}
-				cout << "\nPls confirm the content : \n    ";
-				for (index = 0; index < length; index++) cout << " " << hex << buf[index];
-				cout << "\nDo you confirm to modify ? [Y/N] : ";
-				cin >> confirm_modify;
-				if (confirm_modify == 'Y' || confirm_modify == 'y'){
-					//修改指定位置的内容
-					if_hex.seekg(pos);
-					if_hex.write((char *)buf, length);
-					cout << "OK : have modified the content\n";
-				}
-				else{
-					//放弃修改内容
-					cout << "NOTE : canceled the modify content!\n";
-				} 
+				cout << "\nInput the hex content(" << sizeof(ul_content) << " bytes) : ";
+				cin >> hex >> ul_content;
+				
+				cout << "\nConfirm the pos : 0x" << pos;
+				cout << "\nConfirm the content 0x" << hex << setw(8) << right << setfill('0') << ul_content;
+				
+				if_hex.clear(); //读写切换前要清除状态, 否则后续的写操作不成功 
+				if_hex.seekp(pos);
+				if_hex.write(reinterpret_cast<char const*>(&ul_content), sizeof(ul_content));
 				break;
 				
 			case 'x':
