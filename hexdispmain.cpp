@@ -9,8 +9,10 @@ using namespace std;
 
 #define ROW_SIZE 16
 #define COL_SIZE 16
+#define LONG_SIZE sizeof(unsigned long)
  
 int disp_proc(long pos, unsigned char buf[ROW_SIZE*COL_SIZE]);
+unsigned long big_endian(unsigned long ul_local);
 
 int main(int argc, char** argv) {
 	string option1; 
@@ -28,24 +30,16 @@ int main(int argc, char** argv) {
 	////对文件进行16进制浏览, 可以进行上下翻页, 一次浏览ROW_SIZE*COL_SIZE个字节
 	
 	//检查文件名是否正确 
-//	ifstream if_hex(option1, ios_base::binary);
 	fstream if_hex(option1, ios_base::binary | ios_base::in | ios_base::out);
 	if (not if_hex.is_open()){
 		cout << "\nThe file can't be opened!!!";
 		cout << "\nPls check the path and filename.";
 		return 0;
 	}
-//	if_hex.exceptions(std::ifstream::failbit);
 		
 	//开始进行浏览, 修改内容 
 	unsigned char data[ROW_SIZE*COL_SIZE];
 	long pos = 0;
-	
-	//修改内容时, 需要输入的内容 
-//	long length = 0;
-//	int  index = 0;
-//	short buf[COL_SIZE];
-//	char  confirm_modify;
 					
 	while(true){
 		if_hex.seekg(pos);
@@ -76,45 +70,27 @@ int main(int argc, char** argv) {
 				cin >> hex >> pos;
 				if_hex.clear();
 				break;
-				
+			
+			//修改指定位置的内容, 固定修改长度sizeof(unsigned long)				
 			case 'm':			
-//				cout << "\nInput the addr(hex) : ";
-//				cin >> hex >> pos;
-//				cout << "\nInput the length(hex) : ";
-//				cin >> dec >> length;
-//				if (length > COL_SIZE) length = COL_SIZE;
-//				cout << "\nInput the content : ";
-//				for (index = 0; index < length; index++){
-//					cin >> hex >> buf[index];
-//					if (buf[index] > 0xFF) cout << "\nERROR : " <<  index+1 << " byte value > 0xFF";
-//					break;
-//				}
-//				cout << "\nPls confirm the content : \n    ";
-//				for (index = 0; index < length; index++) cout << " " << hex << buf[index];
-//				cout << "\nDo you confirm to modify ? [Y/N] : ";
-//				cin >> confirm_modify;
-//				if (confirm_modify == 'Y' || confirm_modify == 'y'){
-//					//修改指定位置的内容
-//					if_hex.seekg(pos);
-//					if_hex.write((char *)buf, length);
-//					cout << "OK : have modified the content\n";
-//				}
-//				else{
-//					//放弃修改内容
-//					cout << "NOTE : canceled the modify content!\n";
-//				} 
 				unsigned long ul_content;
+				
 				cout << "\nInput the addr(hex) : ";
 				cin >> hex >> pos;
+				
 				cout << "\nInput the hex content(" << sizeof(ul_content) << " bytes) : ";
 				cin >> hex >> ul_content;
 				
 				cout << "\nConfirm the pos : 0x" << pos;
-				cout << "\nConfirm the content 0x" << hex << setw(8) << right << setfill('0') << ul_content;
+				cout << "\nConfirm the content 0x" << hex << setw(LONG_SIZE*2) << right << setfill('0') << ul_content;
 				
-				if_hex.clear(); //读写切换前要清除状态, 否则后续的写操作不成功 
+				//读写切换前要清除状态, 否则后续的写操作不成功
+				if_hex.clear();  
 				if_hex.seekp(pos);
-				if_hex.write(reinterpret_cast<char const*>(&ul_content), sizeof(ul_content));
+				
+				//需要转换成Bigendian大端存储格式 
+				ul_content = big_endian(ul_content);
+				if_hex.write(reinterpret_cast<char const*>(&ul_content), LONG_SIZE);
 				break;
 				
 			case 'x':
@@ -147,4 +123,29 @@ int disp_proc(long pos, unsigned char buf[ROW_SIZE*COL_SIZE]){
 			(buf[row*COL_SIZE + col] > 0x20 && buf[row*COL_SIZE + col] < 0x7f) ? cout << buf[row*COL_SIZE + col] : cout << ".";
 	}
 	return 0;	
+}
+
+//字节序转换成大端格式bigendian 
+unsigned long big_endian(unsigned long ul_local){
+	union {
+		unsigned long ul_data;
+		unsigned char uc_arr[LONG_SIZE];
+	} stor;
+	unsigned char uctemp;
+	
+	stor.ul_data = 0x1;
+	if (stor.uc_arr[0] == 0x1) {
+		//little endian case
+		stor.ul_data = ul_local;
+		for (int i = 0; i < (LONG_SIZE/2); i++){
+			uctemp = stor.uc_arr[i];
+			stor.uc_arr[i] = stor.uc_arr[LONG_SIZE - i - 1];
+			stor.uc_arr[LONG_SIZE - i - 1] = uctemp;
+		}
+		return stor.ul_data;
+	}
+	else{
+		//bit endian case
+		return ul_local;
+	}
 }
