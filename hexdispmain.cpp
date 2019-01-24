@@ -22,8 +22,9 @@ int main(int argc, char** argv) {
 		option1 = string(argv[1]);
 	}
 	else {
-		cout << "\nUsage : hexdisp [filename]";
-		cout << "\n\nInput the filename : ";
+		cout << "Usage :\n";
+		cout << argv[0] << " [filename]\n";
+		cout << "\nInput the filename : ";
 		cin >> option1;
 	}
 	
@@ -32,8 +33,8 @@ int main(int argc, char** argv) {
 	//检查文件名是否正确 
 	fstream if_hex(option1, ios_base::binary | ios_base::in | ios_base::out);
 	if (not if_hex.is_open()){
-		cout << "\nThe file can't be opened!!!";
-		cout << "\nPls check the path and filename.";
+		cerr << "The file can't be opened!!!\n";
+		cerr << "Pls check the path and filename.\n";
 		return 0;
 	}
 		
@@ -61,7 +62,7 @@ int main(int argc, char** argv) {
 					pos = pos + ROW_SIZE*COL_SIZE; 
 				}
 				else {
-					cout << "\n           ************ END OF FILE !!! ************" << endl;
+					cout << "\n           ************ END OF FILE !!! ************ \n";
 				}
 				break;
 				
